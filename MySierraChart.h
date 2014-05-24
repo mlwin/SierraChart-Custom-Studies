@@ -37,7 +37,7 @@ const float PI_HALF = 3.14159265358979f / 2.0f;
 
 const float RAD_TO_DEG = (180.0f/3.14159265358979f);
 
-inline void DrawMarker(SCStudyGraphRef sc, unsigned int id, unsigned int barIndex, float value, unsigned int type, unsigned int color)
+void DrawMarker(SCStudyGraphRef sc, unsigned int id, unsigned int barIndex, float value, unsigned int type, unsigned int color)
 {
 	s_UseTool Tool; 
 	
@@ -57,7 +57,7 @@ inline void DrawMarker(SCStudyGraphRef sc, unsigned int id, unsigned int barInde
 	sc.UseTool(Tool);
 }
 
-inline void DrawText(SCStudyGraphRef sc, unsigned int id, float x, float y, unsigned int color, unsigned int backcolor, char* text)
+void DrawText(SCStudyGraphRef sc, unsigned int id, float x, float y, unsigned int color, unsigned int backcolor, char* text)
 {
 	s_UseTool Tool;
 	Tool.ChartNumber = sc.ChartNumber;
@@ -81,7 +81,18 @@ inline void DrawText(SCStudyGraphRef sc, unsigned int id, float x, float y, unsi
 	sc.UseTool(Tool);
 }
 
-inline void DrawTrendRay(SCStudyGraphRef sc, unsigned int id, unsigned int index1, float y1, unsigned int index2, float y2, unsigned int color)
+// put up text quick and dirty
+void DrawSimText1(SCStudyGraphRef sc, char* text)
+{
+	DrawText(sc, 987601, 4, 80, COLOR_GREEN, RGB(0,0,0), text);
+}
+
+void DrawSimText2(SCStudyGraphRef sc, char* text)
+{
+	DrawText(sc, 987602, 4, 76, COLOR_RED, RGB(0,0,0), text);
+}
+
+void DrawTrendRay(SCStudyGraphRef sc, unsigned int id, unsigned int index1, float y1, unsigned int index2, float y2, unsigned int color)
 {
 	s_UseTool Tool;
 	
@@ -101,7 +112,7 @@ inline void DrawTrendRay(SCStudyGraphRef sc, unsigned int id, unsigned int index
 	sc.UseTool(Tool);
 }
 
-inline bool IsHH(SCStudyGraphRef sc, unsigned int start)
+bool IsHH(SCStudyGraphRef sc, unsigned int start)
 {
 	for(int i=start; i<=sc.Index; i++)
 	{
@@ -114,7 +125,7 @@ inline bool IsHH(SCStudyGraphRef sc, unsigned int start)
 	return true;
 }
 
-inline bool IsLL(SCStudyGraphRef sc, unsigned int start)
+bool IsLL(SCStudyGraphRef sc, unsigned int start)
 {
 	for(int i=start; i<=sc.Index; i++)
 	{
@@ -127,7 +138,7 @@ inline bool IsLL(SCStudyGraphRef sc, unsigned int start)
 	return true;
 }
 
-inline void DrawShadedRec(SCStudyGraphRef sc, unsigned int id, unsigned int index1, float y1, unsigned int index2, float y2, unsigned int color, int transparency, int outline)
+void DrawShadedRec(SCStudyGraphRef sc, unsigned int id, unsigned int index1, float y1, unsigned int index2, float y2, unsigned int color, int transparency, int outline)
 {
 	s_UseTool Tool;
 	
@@ -152,12 +163,12 @@ inline void DrawShadedRec(SCStudyGraphRef sc, unsigned int id, unsigned int inde
 	sc.UseTool(Tool);
 }
 
-inline float ScaleData(float x, float maxValue, float minValue)
+float ScaleData(float x, float maxValue, float minValue)
 {
 	return (MAX_DATA_RANGE-MIN_DATA_RANGE)/(maxValue-minValue)*(x-minValue)+MIN_DATA_RANGE;
 }
 
-inline float CalculateBB_Bandwidth(SCStudyGraphRef sc, int length, SCSubgraphRef outBB)
+float CalculateBB_Bandwidth(SCStudyGraphRef sc, int length, SCSubgraphRef outBB)
 {
 	sc.BollingerBands(sc.BaseData[SC_LAST], outBB, length, 2.0, MOVAVGTYPE_SIMPLE);
 
@@ -168,7 +179,7 @@ inline float CalculateBB_Bandwidth(SCStudyGraphRef sc, int length, SCSubgraphRef
 	return ((upperBand[sc.Index] - lowerBand[sc.Index]) / middleBand[sc.Index]);
 }
 
-inline void FindMaxMin(SCStudyGraphRef sc, int length, float &highest, float &lowest)
+void FindMaxMin(SCStudyGraphRef sc, int length, float &highest, float &lowest)
 {
 	lowest  = sc.BaseData[SC_HIGH][sc.Index-1];
 	highest = sc.BaseData[SC_LOW][sc.Index-1];
