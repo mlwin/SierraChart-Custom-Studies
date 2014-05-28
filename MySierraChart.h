@@ -194,4 +194,34 @@ void FindMaxMin(SCStudyGraphRef sc, int length, float &highest, float &lowest)
 	}
 }
 
+// Returns date time at sc.Index in YYYY-MM-DD HH:MM:SS format.
+// dateStr must have enough space
+void GetFormattedDateStr(SCStudyGraphRef sc, char* dateStr)
+{
+    // Get the date of the bar at the current index
+    int CurrentBarDate = sc.BaseDateTimeIn[sc.Index].GetDate();
+
+    // Get the time of the bar at the current index
+    int CurrentBarTime = sc.BaseDateTimeIn[sc.Index].GetTime();
+
+	int Year, Month, Day, Hour, Minute, Second;
+
+	TIME_TO_HMS(CurrentBarTime, Hour, Minute, Second);
+	DATE_TO_YMD(CurrentBarDate, Year, Month, Day);
+
+	sprintf(dateStr, "%d-%d-%d %d:%d:%d", Year, Month, Day, Hour, Minute, Second);
+}
+
+void AppendToTextFile(char* file, char* line)
+{
+	FILE *fp = fopen(file, "a");
+	
+	if(fp != NULL)
+	{
+		fprintf(fp, line);
+		fprintf(fp, "\n");
+		
+		fclose(fp);
+	}
+}
 #endif
