@@ -118,6 +118,7 @@ SCSFExport scsf_MyCL_2ndEntriesSystem(SCStudyGraphRef sc)
 	
 	SCInputRef length    = sc.Input[0];
 	SCInputRef enabled   = sc.Input[1];
+	SCInputRef studyID   = sc.Input[2];
     
 	float highest, lowest;
 	
@@ -174,10 +175,15 @@ SCSFExport scsf_MyCL_2ndEntriesSystem(SCStudyGraphRef sc)
 		
 		enabled.Name = "Enable Trading";
 		enabled.SetYesNo(0); 
-        		
+		
+		levelsCheck.Name = "Check Levels";
+		levelsCheck.SetYesNo(0); 
+        
+		studyID.Name = "VWAP Study";
+		studyID.SetStudyID(8);
+		
 		longEntryState   = eStateInitial;
 		shortEntryState  = eStateInitial;
-		
 		
 		sc.AllowMultipleEntriesInSameDirection = false; 
 		sc.MaximumPositionAllowed = 1;
@@ -260,6 +266,14 @@ SCSFExport scsf_MyCL_2ndEntriesSystem(SCStudyGraphRef sc)
 	// Determine current entry state for bars
 	BarEntryState(sc, length.GetInt(), longEntryState, shortEntryState);
 	
+	// save study values
+	SCFloatArray vwapRef;
+	SCFloatArray vwapRefStd1Upper;
+	SCFloatArray vwapRefStd1Lower;
+	//Get the first (0) subgraph from the study the user has selected.
+	sc.GetStudyArrayUsingID(studyID.GetStudyID(), 0, vwapRef);
+	sc.GetStudyArrayUsingID(studyID.GetStudyID(), 1, vwapRefStd1Upper);
+	sc.GetStudyArrayUsingID(studyID.GetStudyID(), 2, vwapRefStd1Lower);
 	
 	// Handle long entry states
 	if(longEntryStateOld == eStateCount0Retrace && 
@@ -274,7 +288,9 @@ SCSFExport scsf_MyCL_2ndEntriesSystem(SCStudyGraphRef sc)
 		// 2nd entry long
 		LongSignal[sc.Index] = sc.Low[sc.Index]-sc.TickSize*2;
 
-		if(longsEnable && enabled.GetYesNo())
+		if(longsEnable         && 
+		   enabled.GetYesNo()  &&
+		   sc.BaseData[SC_LAST][sc.Index] < vwapRefStd1Upper[sc.Index]))
 			EnterLongOrder(sc);
 	}
 
@@ -291,7 +307,9 @@ SCSFExport scsf_MyCL_2ndEntriesSystem(SCStudyGraphRef sc)
 		// 2nd entry
 		ShortSignal[sc.Index] = sc.High[sc.Index]+sc.TickSize*2;
 
-		if(shortsEnable && enabled.GetYesNo())
+		if(shortsEnable       && 
+		   enabled.GetYesNo() &&
+	       sc.BaseData[SC_LAST][sc.Index] > vwapRefStd1Lower[sc.Index])
 			EnterShortOrder(sc);
 	}
 
