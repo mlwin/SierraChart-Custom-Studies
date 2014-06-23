@@ -32,10 +32,12 @@ enum StatusCodes
 
 const float MAX_DATA_RANGE = 1.0f;
 const float MIN_DATA_RANGE = -1.0f;
+const float PI      = 3.14159265358979f;
+const float PI_HALF = PI / 2.0f;
+const float RAD_TO_DEG = (180.0f/PI);
 
-const float PI_HALF = 3.14159265358979f / 2.0f;
-
-const float RAD_TO_DEG = (180.0f/3.14159265358979f);
+const float SP_2POLE_ARG = 1.414*PI;
+const float SP_3POLE_ARG = 1.738*PI;
 
 void DrawMarker(SCStudyGraphRef sc, unsigned int id, unsigned int barIndex, float value, unsigned int type, unsigned int color)
 {
@@ -224,4 +226,109 @@ void AppendToTextFile(char* file, char* line)
 		fclose(fp);
 	}
 }
+
+// Returns the bar # that order was entered if successful or -1
+int EnterLongOnHigh(SCStudyGraphRef sc)
+{
+    // Create an s_SCNewOrder object. 
+    s_SCNewOrder NewOrder;
+    NewOrder.OrderQuantity = 1;
+    NewOrder.OrderType = SCT_LIMIT;
+    NewOrder.Price1 = sc.High[sc.Index]-+sc.TickSize;
+
+    int orderResult;
+    
+    s_SCPositionData PositionData;
+    sc.GetTradePosition(PositionData);
+        
+    if(PositionData.PositionQuantity == 0)
+    {
+        orderResult = sc.BuyEntry(NewOrder);
+        if(orderResult > 0)
+        {           
+            // draw arrow
+            DrawMarker(sc, sc.Index, sc.Index, sc.Low[sc.Index]-sc.TickSize*8, MARKER_ARROWUP, COLOR_GREEN);
+            
+            return sc.Index;
+        }
+    }
+    
+    return -1;
+}
+
+// Returns the bar # that order was entered if successful or -1
+int EnterShortOnLow(SCStudyGraphRef sc)
+{
+    // Create an s_SCNewOrder object. 
+    s_SCNewOrder NewOrder;
+    NewOrder.OrderQuantity = 1;
+    NewOrder.OrderType = SCT_LIMIT;
+    NewOrder.Price1 = sc.Low[sc.Index]-sc.TickSize;
+    
+    int orderResult;
+    
+    s_SCPositionData PositionData;
+    sc.GetTradePosition(PositionData);
+    
+    if(PositionData.PositionQuantity == 0)
+    {
+        orderResult = sc.SellEntry(NewOrder);
+        if(orderResult > 0)
+        {            
+            // draw arrow
+            DrawMarker(sc, sc.Index, sc.Index, sc.High[sc.Index]+sc.TickSize*8, MARKER_ARROWDOWN, COLOR_RED);
+            
+            return sc.Index;
+        }
+    }
+    
+    return -1;
+}
+
+// 2 Pole SuperSmoother as presented by John Ehlers
+void Calculate2PoleSuperSmoother(SCStudyGraphRef sc, SCSubgraphRef filter, int period)
+{
+    float a1, b1, cf1, cf2, cf3;
+	
+	a1 = exp(-SP_2POLE_ARG/period);
+	b1 = 2*a1*cos(SP_2POLE_ARG/period);
+		
+	cf2 = b1;
+	cf3 = -a1*a1;
+	cf1 = 1-cf2-cf3;
+		
+	if (sc.Index < 2) 
+    {
+        filter[sc.Index] = sc.Close[sc.Index];
+    }	
+	else
+    {
+        filter[sc.Index] = cf1*((sc.Close[sc.Index]+sc.Close[sc.Index-1])/2) + cf2*filter[sc.Index-1] + cf3*filter[sc.Index-2];
+    }
+}
+
+// 3 Pole SuperSmoother as presented by John Ehlers
+void Calculate3PoleSuperSmoother(SCStudyGraphRef sc, SCSubgraphRef filter, int period)
+{
+    float a1, b1, c1, cf1, cf2, cf3, cf4;
+	
+	a1 = exp(-PI/period);
+	b1 = 2*a1*cos(SP_3POLE_ARG/period);
+	c1 = a1*a1;
+		
+	cf2 = b1 + c1;
+	cf3 = -(c1 + b1*c1);
+	cf4 = c1*c1;
+	cf1 = 1 - cf2 - cf3 - cf4;	
+		
+	if (sc.Index < 3)
+    {
+        filter[sc.Index] = sc.Close[sc.Index];
+    }
+	else
+    {
+        filter[sc.Index] = cf1*((sc.Close[sc.Index]+sc.Close[sc.Index-1])/2)  + cf2*filter[sc.Index-1] + cf3*filter[sc.Index-2] + cf4*filter[sc.Index-3];
+    }
+}
+
 #endif
